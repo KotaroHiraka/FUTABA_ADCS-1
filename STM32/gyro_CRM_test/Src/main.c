@@ -80,10 +80,11 @@ HAL_StatusTypeDef data_transfer_CRM(
 	send_data[0] = command;
 	send_data[5] = ~(send_data[0] + send_data[1] + send_data[2] + send_data[3] + send_data[4]); //CHECKSUM
 
-	HAL_Delay(1);
 
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, GPIO_PIN_RESET);
+	HAL_Delay(1);
 	HAL_StatusTypeDef ret = HAL_SPI_TransmitReceive(hspi, send_data, receive_data,6, Timeout);
+	HAL_Delay(1);
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, GPIO_PIN_SET);
 
 	return ret;
@@ -149,21 +150,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  uint8_t command = 0b00111000; //¬±75deg/s„Å´Ë®≠??øΩ?øΩ?
-	  uint8_t receive_data[6];
+	  uint8_t command = 0b00111000; //¬±75deg/s
+	  uint8_t receive_data[3][6];
 	  int16_t rate_i, temp_i;
-	  float rate, temp;
+	  float rate[3], temp[3];
 
-	  data_transfer_CRM(&hspi3, SS_P_GPIO_Port, SS_P_Pin, command, receive_data, 100);
+	  data_transfer_CRM(&hspi3, SS_R_GPIO_Port, SS_R_Pin, command, receive_data[0], 100);
+	  data_transfer_CRM(&hspi3, SS_P_GPIO_Port, SS_P_Pin, command, receive_data[1], 100);
+	  data_transfer_CRM(&hspi3, SS_Y_GPIO_Port, SS_Y_Pin, command, receive_data[2], 100);
 
-	  rate_i = ( (receive_data[1]<<8) + receive_data[2]);
-	  temp_i = ( (receive_data[3]<<8) + receive_data[4] -531 );
+	  for (int i = 0; i < 3; i++) {
+		  rate_i = ((receive_data[i][1] << 8) + receive_data[i][2]);
+		  temp_i = ((receive_data[i][3] << 8) + receive_data[i][4] - 531);
 
-	  rate = rate_i / 96; //ËßíÂ∫¶ ¬±75deg/s„ÅÆÂ†¥??øΩ?øΩ?
-	  temp = temp_i / 2.75; //Ê∏©Â∫¶
+		  rate[i] = rate_i / 96.0; //¬±75deg/s
+		  temp[i] = temp_i / 2.75; //
+	  }
 
-	  printf("Status=%2X CHECKSUM=%2X rate=%5.3f temp=%5.3f \n", receive_data[0], receive_data[5], rate, temp);
-	  HAL_Delay(50);
+	  printf("[Roll Pitch Yaw] Status[%02X %02X %02X]  CHECKSUM[%02X %02X %02X]  temp[%5.2f %5.2f %5.2f]  rate[%+8.3f %+8.3f %+8.3f][deg/s]\n",
+		  receive_data[0][0], receive_data[1][0], receive_data[2][0],
+		  receive_data[0][5], receive_data[1][5], receive_data[2][5],
+		  temp[0], temp[1], temp[2],
+		  rate[0], rate[1], rate[2]);
+
+	  HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
@@ -202,11 +212,11 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV16;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV16;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -235,7 +245,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

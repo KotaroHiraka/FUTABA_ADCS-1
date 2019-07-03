@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "CRMx00.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -129,17 +130,24 @@ int main(void)
 
   HAL_Delay(500);
 
+  CRMx00_t Roll, Pitch, Yaw;
+  Roll = SetCRM_port(&hspi3, SS_R_GPIO_Port, SS_R_Pin, reset_R_GPIO_Port, reset_R_Pin);
+  Pitch= SetCRM_port(&hspi3, SS_P_GPIO_Port, SS_P_Pin, reset_P_GPIO_Port, reset_P_Pin);
+  Yaw  = SetCRM_port(&hspi3, SS_Y_GPIO_Port, SS_Y_Pin, reset_Y_GPIO_Port, reset_Y_Pin);
+
   //RESET
   printf("Reset...");
-  HAL_GPIO_WritePin(reset_P_GPIO_Port, reset_P_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(reset_R_GPIO_Port, reset_R_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(reset_Y_GPIO_Port, reset_Y_Pin, GPIO_PIN_RESET);
-  HAL_Delay(200);
-  HAL_GPIO_WritePin(reset_P_GPIO_Port, reset_P_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(reset_R_GPIO_Port, reset_R_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(reset_Y_GPIO_Port, reset_Y_Pin, GPIO_PIN_SET);
-  HAL_Delay(1000);
+  ResetCRM(&Roll);
+  ResetCRM(&Pitch);
+  ResetCRM(&Yaw);
   printf("Done!\n");
+
+  //Set Range
+  const uint16_t range = 75;
+  printf("SetCRM_range = %d deg/s\n", range);
+  SetCRM_range(&Roll ,range);
+  SetCRM_range(&Pitch, range);
+  SetCRM_range(&Yaw  , range);
 
   /* USER CODE END 2 */
 
@@ -150,30 +158,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  uint8_t command = 0b00111000; //±75deg/s
-	  uint8_t receive_data[3][6];
-	  int16_t rate_i, temp_i;
-	  float rate[3], temp[3];
-
-	  data_transfer_CRM(&hspi3, SS_R_GPIO_Port, SS_R_Pin, command, receive_data[0], 100);
-	  data_transfer_CRM(&hspi3, SS_P_GPIO_Port, SS_P_Pin, command, receive_data[1], 100);
-	  data_transfer_CRM(&hspi3, SS_Y_GPIO_Port, SS_Y_Pin, command, receive_data[2], 100);
-
-	  for (int i = 0; i < 3; i++) {
-		  rate_i = ((receive_data[i][1] << 8) + receive_data[i][2]);
-		  temp_i = ((receive_data[i][3] << 8) + receive_data[i][4] - 531);
-
-		  rate[i] = rate_i / 96.0; //±75deg/s
-		  temp[i] = temp_i / 2.75; //
-	  }
-
-	  printf("[Roll Pitch Yaw] Status[%02X %02X %02X]  CHECKSUM[%02X %02X %02X]  temp[%5.2f %5.2f %5.2f]  rate[%+8.3f %+8.3f %+8.3f][deg/s]\n",
-		  receive_data[0][0], receive_data[1][0], receive_data[2][0],
-		  receive_data[0][5], receive_data[1][5], receive_data[2][5],
-		  temp[0], temp[1], temp[2],
-		  rate[0], rate[1], rate[2]);
-
+	  UpdateCRM(&Roll , 100);
+	  UpdateCRM(&Pitch, 100);
+	  UpdateCRM(&Yaw  , 100);
+	  printf("[R P Y] S[%02X %02X %02X] T[%5.2f %5.2f %5.2f] R[%+8.3f %+8.3f %+8.3f]\n",
+		  Roll.status       , Pitch.status       , Yaw.status       ,
+		  Roll.temperature_f, Pitch.temperature_f, Yaw.temperature_f,
+		  Roll.rate_f       , Pitch.rate_f       , Yaw.rate_f       );
 	  HAL_Delay(100);
+
   }
   /* USER CODE END 3 */
 }

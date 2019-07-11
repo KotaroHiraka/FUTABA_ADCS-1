@@ -38,4 +38,12 @@ CPHA:1Edge
 1つのメッセージは6Byte48Bitで完結する。  
 各バイトはcommand→ DATA0→…→DATA3→CHECKSUMの順  
 
-### 関数 
+### ライブラリの使い方  
+ 1. ```CRMx00_t``` 構造体をデバイスの数だけ宣言
+ 1. ```SetCRM_port``` でSSやRESET、SPIのポートとピンを指定
+ 1. ```SetCRM_range``` でレンジを指定
+ 1. ```UpdateCRM``` でデータを更新
+ 1. ```CRMx00_t.temperature_f``` などの値を読む
+
+### 関数リファレンス
+(後で書く)

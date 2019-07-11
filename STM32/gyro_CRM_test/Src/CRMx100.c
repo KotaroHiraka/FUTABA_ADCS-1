@@ -57,7 +57,6 @@ void ResetCRM(CRMx00_t* CRMx00) {
 	HAL_GPIO_WritePin(CRMx00->ss_port, CRMx00->ss_pin, GPIO_PIN_RESET);
 	HAL_Delay(1);
 	HAL_SPI_TransmitReceive(CRMx00->spi_port, send_data, receive_data, 6, Timeout);
-	HAL_Delay(1);
 	HAL_GPIO_WritePin(CRMx00->ss_port, CRMx00->ss_pin, GPIO_PIN_SET);
 
 	//checksum�m�F�͏ȗ�

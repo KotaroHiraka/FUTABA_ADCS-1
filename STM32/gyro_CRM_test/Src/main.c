@@ -158,6 +158,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  /*
 	  UpdateCRM(&Roll , 100);
 	  UpdateCRM(&Pitch, 100);
 	  UpdateCRM(&Yaw  , 100);
@@ -166,6 +167,13 @@ int main(void)
 		  Roll.temperature_f, Pitch.temperature_f, Yaw.temperature_f,
 		  Roll.rate_f       , Pitch.rate_f       , Yaw.rate_f       );
 	  HAL_Delay(100);
+	  */
+	  UpdateCRM(&Roll , 100);
+	  UpdateCRM(&Pitch, 100);
+	  UpdateCRM(&Yaw  , 100);
+	  printf("%+8.3f,%+8.3f,%+8.3f\n",
+	  		  Roll.rate_f , Pitch.rate_f , Yaw.rate_f );
+	  HAL_Delay(4);
 
   }
   /* USER CODE END 3 */

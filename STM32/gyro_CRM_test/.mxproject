@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/yosihisa/Programming/FUTABA_ADCS/STM32/gyro_CRM_test/Inc
+HeaderPath=D:/Programming/FUTABA_ADCS/STM32/gyro_CRM_test/Inc
 HeaderFiles=stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;
-SourcePath=C:/Users/yosihisa/Programming/FUTABA_ADCS/STM32/gyro_CRM_test/Src
+SourcePath=D:/Programming/FUTABA_ADCS/STM32/gyro_CRM_test/Src
 SourceFiles=stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]

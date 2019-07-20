@@ -32,12 +32,13 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "CRMx00.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+CRMx00_t Roll, Pitch, Yaw;
+unsigned int counter;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

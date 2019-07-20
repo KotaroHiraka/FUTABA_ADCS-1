@@ -24,7 +24,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
-#include "CRMx00.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +43,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi3;
+
+TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart2;
@@ -68,6 +69,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_UART4_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -128,13 +130,13 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI3_Init();
   MX_UART4_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   printf("Hello CRM100 CRM200 test.\n");
 
   HAL_Delay(500);
 
-  CRMx00_t Roll, Pitch, Yaw;
   Roll = SetCRM_port(&hspi3, SS_R_GPIO_Port, SS_R_Pin, reset_R_GPIO_Port, reset_R_Pin);
   Pitch= SetCRM_port(&hspi3, SS_P_GPIO_Port, SS_P_Pin, reset_P_GPIO_Port, reset_P_Pin);
   Yaw  = SetCRM_port(&hspi3, SS_Y_GPIO_Port, SS_Y_Pin, reset_Y_GPIO_Port, reset_Y_Pin);
@@ -152,7 +154,8 @@ int main(void)
   SetCRM_range(&Roll ,range);
   SetCRM_range(&Pitch, range);
   SetCRM_range(&Yaw  , range);
-
+  HAL_TIM_Base_Start_IT(&htim2);
+  counter = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -162,23 +165,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  /*
+	  unsigned int counter_before = counter;
 	  UpdateCRM(&Roll , 100);
 	  UpdateCRM(&Pitch, 100);
 	  UpdateCRM(&Yaw  , 100);
-	  printf("[R P Y] S[%02X %02X %02X] T[%5.2f %5.2f %5.2f] R[%+8.3f %+8.3f %+8.3f]\n",
+
+	  /*
+	  printf("%d[R P Y] S[%02X %02X %02X] T[%5.2f %5.2f %5.2f] R[%+8.3f %+8.3f %+8.3f]\n",
+		  counter,
 		  Roll.status       , Pitch.status       , Yaw.status       ,
 		  Roll.temperature_f, Pitch.temperature_f, Yaw.temperature_f,
 		  Roll.rate_f       , Pitch.rate_f       , Yaw.rate_f       );
-	  HAL_Delay(100);
 	  */
-	  UpdateCRM(&Roll , 100);
-	  UpdateCRM(&Pitch, 100);
-	  UpdateCRM(&Yaw  , 100);
-	  printf("%+8.3f,%+8.3f,%+8.3f\n",
-	  		  Roll.rate_f , Pitch.rate_f , Yaw.rate_f );
-	  HAL_Delay(4);
+	  //printf("%d,%+8.3f,%+8.3f,%+8.3f\n", counter, Roll.rate_f, Pitch.rate_f, Yaw.rate_f);
 
+	  printf("%d,%2d,%5.2f,%+8.3f,%2d,%5.2f,%+8.3f,%2d,%5.2f,%+8.3f,\n",
+	  		  counter,
+	  		  Roll.status , Roll.temperature_f , Roll.rate_f ,
+			  Pitch.status, Pitch.temperature_f, Pitch.rate_f,
+			  Yaw.status  , Yaw.temperature_f  , Yaw.rate_f   );
+	  while(counter==counter_before);
   }
   /* USER CODE END 3 */
 }
@@ -250,7 +256,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -262,6 +268,51 @@ static void MX_SPI3_Init(void)
   /* USER CODE BEGIN SPI3_Init 2 */
 
   /* USER CODE END SPI3_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 90;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 19999;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
 
 }
 
